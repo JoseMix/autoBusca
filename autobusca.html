@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoBusca — Buscador de Vehículos</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#08090e;
+  --s1:#0f1118;
+  --s2:#161923;
+  --s3:#1e2330;
+  --s4:#252d3d;
+  --border:#1e2a3a;
+  --border2:#2a3a50;
+  --gold:#e8b84b;
+  --gold2:#c49a2a;
+  --gold-dim:rgba(232,184,75,0.12);
+  --gold-glow:rgba(232,184,75,0.25);
+  --text:#dde3ef;
+  --muted:#7b8ba0;
+  --dim:#4a5568;
+  --anti:#e05252;
+  --anti-dim:rgba(224,82,82,0.12);
+  --anti-border:rgba(224,82,82,0.3);
+  --correct:#3dca8c;
+  --r:6px;
+  --r2:10px;
+}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;line-height:1.5;min-height:100vh}
+
+/* ——— HEADER ——— */
+header{
+  background:linear-gradient(180deg,#0f1118 0%,#0d0f16 100%);
+  border-bottom:1px solid var(--border2);
+  padding:0 28px;
+  height:58px;
+  display:flex;
+  align-items:center;
+  gap:20px;
+  position:sticky;top:0;z-index:200;
+}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--gold);letter-spacing:-0.5px;display:flex;align-items:center;gap:8px}
+.logo-dot{width:8px;height:8px;background:var(--gold);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(0.8)}}
+.header-badge{
+  background:var(--anti-dim);border:1px solid var(--anti-border);
+  color:var(--anti);padding:3px 10px;border-radius:20px;font-size:11px;font-family:'JetBrains Mono',monospace;font-weight:600
+}
+.header-stock{margin-left:auto;font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+
+/* ——— LAYOUT ——— */
+.layout{display:grid;grid-template-columns:360px 1fr;min-height:calc(100vh - 58px)}
+
+/* ——— SIDEBAR ——— */
+.sidebar{background:var(--s1);border-right:1px solid var(--border);overflow-y:auto;height:calc(100vh - 58px);position:sticky;top:58px}
+.sb-head{padding:16px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.sb-head h2{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted)}
+.btn-reset{background:transparent;border:1px solid var(--border2);color:var(--muted);padding:4px 12px;border-radius:var(--r);cursor:pointer;font-size:11px;font-family:'JetBrains Mono',monospace;transition:all .2s}
+.btn-reset:hover{border-color:var(--gold);color:var(--gold)}
+
+/* Field */
+.field{padding:14px 20px;border-bottom:1px solid var(--border)}
+.field-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.field-name{font-family:'Syne',sans-serif;font-weight:700;font-size:12px;letter-spacing:.3px}
+.badge-anti{font-size:9.5px;background:var(--anti-dim);color:var(--anti);border:1px solid var(--anti-border);padding:2px 7px;border-radius:20px;font-family:'JetBrains Mono',monospace;white-space:nowrap}
+.hint{font-size:10px;color:var(--dim);font-style:italic;margin-top:6px}
+
+/* Slider base */
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:var(--s4);border-radius:2px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;background:var(--gold);border-radius:50%;cursor:pointer;border:2px solid var(--bg);transition:transform .15s}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
+input[type=range].vert{writing-mode:vertical-lr;direction:rtl;width:20px;height:100px}
+
+/* Brand display */
+.brand-disp{background:var(--s3);border:1px solid var(--border2);border-radius:var(--r);padding:8px 12px;text-align:center;font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--gold);margin-bottom:8px;min-height:38px;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.slider-ends{display:flex;justify-content:space-between;font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-top:4px}
+
+/* Model radios */
+.models-wrap{max-height:150px;overflow-y:auto;border:1px solid var(--border2);border-radius:var(--r);padding:6px}
+.models-wrap::-webkit-scrollbar{width:4px}
+.models-wrap::-webkit-scrollbar-thumb{background:var(--s4);border-radius:2px}
+.radio-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px}
+.radio-grid label{display:flex;align-items:center;gap:6px;padding:5px 7px;border-radius:4px;cursor:pointer;transition:background .15s;font-size:12px}
+.radio-grid label:hover{background:var(--s3)}
+input[type=radio]{accent-color:var(--gold);cursor:pointer}
+
+/* Month inputs */
+.month-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.month-col{display:flex;flex-direction:column;gap:4px}
+.month-col label{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+input[type=month],input[type=date],input[type=number],textarea,select{
+  background:var(--s3);border:1px solid var(--border2);color:var(--text);
+  padding:7px 10px;border-radius:var(--r);font-size:12px;width:100%;
+  font-family:'DM Sans',sans-serif;transition:border-color .2s
+}
+input[type=month]:focus,input[type=date]:focus,input[type=number]:focus,textarea:focus,select:focus{
+  outline:none;border-color:var(--gold)
+}
+input[type=month]::-webkit-calendar-picker-indicator,
+input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.4) sepia(1) hue-rotate(10deg)}
+.year-disp{text-align:center;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--gold);margin-top:6px}
+
+/* Price checkboxes */
+.price-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.price-grid label{display:flex;align-items:center;gap:7px;padding:7px 9px;background:var(--s2);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;font-size:11px;font-family:'JetBrains Mono',monospace;transition:all .15s}
+.price-grid label:hover{border-color:var(--gold);background:var(--gold-dim)}
+.price-grid input[type=checkbox]{accent-color:var(--gold)}
+.price-grid input:checked~span{color:var(--gold);font-weight:600}
+
+/* KM vertical */
+.km-wrap{display:flex;gap:12px;align-items:center;padding:4px 0}
+.km-scale{display:flex;flex-direction:column;justify-content:space-between;height:100px;font-size:9px;color:var(--dim);font-family:'JetBrains Mono',monospace;text-align:right}
+.km-val{font-size:13px;font-weight:600;font-family:'JetBrains Mono',monospace;color:var(--gold)}
+.km-note{font-size:10px;color:var(--dim);margin-top:4px}
+
+/* Fuel cycling */
+.fuel-disp{background:var(--s3);border:1px solid var(--border2);border-radius:var(--r);padding:8px;text-align:center;font-weight:600;color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:12px;margin-bottom:8px;transition:all .2s}
+
+/* Transmission date */
+.tx-result{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--s3);border-radius:var(--r);margin-top:6px;font-size:11px;font-family:'JetBrains Mono',monospace}
+.tx-rule{font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-bottom:6px;line-height:1.6}
+.tx-badge{padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.b-manual{background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.3)}
+.b-auto{background:rgba(99,102,241,.15);color:#818cf8;border:1px solid rgba(99,102,241,.3)}
+.b-any{background:rgba(61,202,140,.15);color:var(--correct);border:1px solid rgba(61,202,140,.3)}
+
+/* Color number */
+.color-row{display:flex;align-items:center;gap:10px}
+input[type=number]{width:70px;font-size:18px;font-weight:700;text-align:center;font-family:'JetBrains Mono',monospace}
+.color-ball{width:36px;height:36px;border-radius:50%;border:2px solid var(--border2);transition:all .3s;flex-shrink:0}
+.color-table{font-size:9.5px;color:var(--dim);font-family:'JetBrains Mono',monospace;line-height:1.9;margin-top:7px}
+
+/* Body textarea */
+textarea{resize:none;font-family:'JetBrains Mono',monospace;font-size:11px}
+
+/* Extras */
+.extras-add{display:flex;gap:6px;margin-bottom:6px}
+select{cursor:pointer}
+.btn-add{background:var(--gold);color:#000;border:none;padding:7px 13px;border-radius:var(--r);cursor:pointer;font-weight:700;font-size:11px;white-space:nowrap;font-family:'Syne',sans-serif;transition:background .2s;flex-shrink:0}
+.btn-add:hover{background:var(--gold2)}
+.extra-tags{display:flex;flex-wrap:wrap;gap:4px}
+.etag{background:var(--gold-dim);border:1px solid rgba(232,184,75,.3);color:var(--gold);padding:3px 9px;border-radius:20px;font-size:10px;font-family:'JetBrains Mono',monospace;display:flex;align-items:center;gap:5px}
+.etag button{background:none;border:none;color:var(--gold);cursor:pointer;font-size:12px;line-height:1;padding:0;opacity:.7}
+.etag button:hover{opacity:1}
+
+/* Stars (doors) */
+.stars{display:flex;gap:4px;align-items:center}
+.star{font-size:22px;cursor:pointer;color:var(--s4);transition:color .15s,transform .1s;user-select:none;line-height:1}
+.star.on,.star:hover~.star-reset,.stars:hover .star{color:var(--s4)}
+.star.on{color:var(--gold)}
+.stars:hover .star{color:var(--gold)}
+.star:hover~.star{color:var(--s4) !important}
+.doors-lbl{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted);margin-left:6px}
+.star-key{font-size:9.5px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-top:5px;line-height:1.8}
+
+/* Seats vertical */
+.seats-wrap{display:flex;gap:14px;align-items:center}
+.seats-num{font-size:36px;font-weight:800;font-family:'Syne',sans-serif;color:var(--gold);min-width:50px;text-align:center;line-height:1}
+.seats-sub{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-align:center}
+.seats-key{font-size:9.5px;color:var(--dim);font-family:'JetBrains Mono',monospace;line-height:1.9;margin-top:6px}
+
+/* Search button */
+.search-btn{
+  display:block;width:calc(100% - 40px);margin:16px 20px;
+  background:linear-gradient(135deg,var(--gold) 0%,var(--gold2) 100%);
+  color:#000;border:none;padding:14px;border-radius:var(--r);
+  font-family:'Syne',sans-serif;font-weight:800;font-size:14px;letter-spacing:.5px;
+  cursor:pointer;transition:opacity .2s,transform .1s
+}
+.search-btn:hover{opacity:.9}
+.search-btn:active{transform:scale(.98)}
+
+/* ——— RESULTS ——— */
+.results{padding:24px;overflow-y:auto;background:var(--bg)}
+.results-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.results-head h2{font-family:'Syne',sans-serif;font-weight:800;font-size:17px}
+.res-count{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+
+/* Car card */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;transition:border-color .2s,box-shadow .2s;cursor:default}
+.card:hover{border-color:var(--gold2);box-shadow:0 4px 24px rgba(232,184,75,.08)}
+.card-img{height:120px;background:linear-gradient(135deg,var(--s2) 0%,var(--s3) 100%);display:flex;align-items:center;justify-content:center;font-size:56px;position:relative}
+.card-year{position:absolute;top:8px;right:8px;background:var(--bg);border:1px solid var(--border2);padding:2px 8px;border-radius:20px;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--muted)}
+.card-body{padding:14px}
+.card-brand{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:2px}
+.card-name{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;margin-bottom:2px}
+.card-sub{font-size:11px;color:var(--muted);margin-bottom:10px}
+.card-price{font-family:'Syne',sans-serif;font-weight:800;font-size:21px;color:var(--gold);margin-bottom:10px}
+.specs{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px}
+.spec{background:var(--s2);border-radius:5px;padding:6px 8px}
+.spec-k{font-size:9px;color:var(--dim);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.5px}
+.spec-v{font-size:11px;font-weight:600;margin-top:1px;display:flex;align-items:center;gap:4px}
+.cdot{width:9px;height:9px;border-radius:50%;border:1px solid rgba(255,255,255,.15);display:inline-block;flex-shrink:0}
+.extags{display:flex;flex-wrap:wrap;gap:3px}
+.xtag{font-size:9.5px;padding:2px 6px;background:var(--s3);border-radius:4px;color:var(--dim)}
+
+/* No results */
+.nores{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted)}
+.nores em{font-size:40px;display:block;margin-bottom:12px}
+.nores strong{font-family:'Syne',sans-serif;font-size:16px}
+.nores p{font-size:12px;margin-top:6px;color:var(--dim)}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--s4);border-radius:3px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><span class="logo-dot"></span>AutoBusca<span style="color:var(--muted);font-weight:400"> Pro</span></div>
+  <div class="header-badge">⚠ ANTI-PATRONES UX — uso educativo</div>
+  <div class="header-stock">25 vehículos · Datos ficticios</div>
+</header>
+
+<div class="layout">
+<!-- ════════ SIDEBAR ════════ -->
+<aside class="sidebar">
+  <div class="sb-head">
+    <h2>Filtros de búsqueda</h2>
+    <button class="btn-reset" onclick="resetAll()">↺ Reset</button>
+  </div>
+
+  <!-- 1. MARCA → SLIDER -->
+  <div class="field">
+    <div class="field-head">
+      <span class="field-name">🏷 Marca</span>
+      <span class="badge-anti">✗ Slider ← Select/Autocomplete</span>
+    </div>
+    <div class="brand-disp" id="brandDisp">⭐ Todas las marcas</div>
+    <input type="range" id="brandSlider" min="-1" max="13" value="-1" step="1" oninput="onBrand(this.value)">
+    <div class="slider-ends"><span>← Todas</span><span>Volkswagen →</span></div>
+    <div class="hint">💡 Correcto: dropdown con buscador incremental</div>
+  </div>
+
+  <!-- 2. MODELO → RADIOS sin filtrar -->
+  <div class="field">
+    <div class="field-head">
+      <span class="field-name">🚘 Modelo</span>
+      <span class="badge-anti">✗ Radios todos ← Select dependiente</span>
+    </div>
+    <div class="models-wrap"><div class="radio-grid" id="modGrid"></div></div>
+    <div class="hint">💡 Correcto: select que se filtra según la marca elegida</div>
+  </div>
+
+  <!-- 3. AÑO → MONTH pickers invertidos -->
+  <div class="field">
+    <div class="field-head">
+      <span class="field-name">📅 Año</span>
+      <span class="badge-anti">✗ Mes/Año invertido ← Slider de rango</span>
+    </div>
+    <div class="month-row">
+      <div class="month-col">
+        <label>Hasta (mes/año) 🤔</label>
+        <input type="month" id="yTo" min="2010-01" max="2024-12" value="2024-12" oninput="onYear()">
+      </div>
+      <div class="month-col">
+        <label>Desde (mes/año) 🤔</label>
+        <input type="month" id="yFrom" min="2010-01" max="2024-12" value="2010-01" oninput="onYear()">
+      </div>
+    </div>
+    <div class="year-disp" id="yDisp">Rango: 2010 — 2024</div>
+    <div class="hint">💡 Correcto: slider doble · (además los campos están intercambiados)</div>
+  </div>
+
+  <!-- 4. PRECIO → CHECKBOXES -->
+  <div class="field">
+    <div class="field-head">
+      <span class="field-name">💰 Precio máx.</span>
+      <span class="badge-anti">✗ Checkboxes ← Slider continuo</span>
+    </div>
+    <div class="price-grid">
+      <label><input type="checkbox" value="0-15000" onchange="onPrice()"><span>≤ 15.000 €</span></label>
+      <label><input type="checkbox" value="15000-25000" onchange="onPrice()"><span>15k – 25k €</span></label>
+      <label><input type="checkbox" value="25000-35000" onchange="onPrice()"><span>25k – 35k €</span></label>
+      <label><input type="checkbox" value="35000-50000" onchange="onPrice()"><span>35k – 50k €</span></label>
+      <label><input type="checkbox" value="50000-999999" onchange="onPrice()"><span>+ de 50k €</span></label>
+      <label><input type="checkbox" value="0-999999" onchange="onPrice()"><span>Cualquier precio</span></label>
+    </div>
+    <div class="hint">💡 Correcto: slider con mínimo y máximo</div>
+  </div>
+
+  <!-- 5. KILOMETRAJE → SLIDER VERTICAL -->
+  <div class="field">
+    <div class="field-head">
+      <span class="field-name">🏁 Km máximos</span>
+      <span class="badge-anti">✗ Slider vertical ← Input numérico</span>
+    </div>
+    <div class="km-wrap">
+      <div class="km-scale"><span>300k</span><span>225k</span><span>150k</span><span>75k</span><span>0</span></div>
+      <input type="range" class="vert" id="kmSlider" min="0" max="300000" value="300000" step="5000" oninput="onKm(this.value)">
+      <div>
+        <div class="km-val" id="kmVal">≤ 300.000 km</div>
+        <div class="km-note">⬆ arriba = menos km</div>
+      </div>
+    </div>
+    <div class="hint">💡 Correcto: campo numérico o slider horizontal</div>
+  </div>
+
+  <!-- 6. COMBUSTIBLE → SLIDER CÍCLICO -->
+  <div class="field">
+    <div class="field-head">
+      <span class="field-name">⛽ Combustible</span>
+      <span class="badge-anti">✗ Slider cíclico ← Radio buttons</span>
+    </div>
+    <div class="fuel-disp" id="fuelDisp">🔄 Todos</div>
+    <input type="range" id="fuelSlider" min="0" max="5" value="0" step="1" oninput="onFuel(this.value)">
+    <div class="slider-ends"><span>← Todos</span><span>GLP →</span></div>
+    <div class="hint">💡 Correcto: radio buttons o checkboxes</div>
+  </div>
+
+  <!-- 7. TRANSMISIÓN → DATE PICKER -->
+  <div class="field">
+    <div class="field-head">
+      <span class="field-name">⚙️ Transmisión</span>
+      <span class="badge-anti">✗ Date picker ← Toggle Manual/Auto</span>
+    </div>
+    <div class="tx-rule">Día par → Automático &nbsp;·&nbsp; Día impar → Manual &nbsp;·&nbsp; Día 15 → Todas</div>
+    <input type="date" id="txDate" oninput="onTx(this.value)">
+    <div class="tx-result" id="txResult">
+      <span id="txLabel">Elige una fecha…</span>
+      <span class="tx-badge b-any" id="txBadge">Todas</span>
+    </div>
+    <div class="hint">💡 Correcto: toggle de dos estados + opción "ambas"</div>
+  </div>
+
+  <!-- 8. COLOR → NÚMERO -->
+  <div class="field">
+    <div class="field-head">
+      <span class="field-name">🎨 Color</span>
+      <span class="badge-anti">✗ Número (0-8) ← Swatches visuales</span>
+    </div>
+    <div class="color-row">
+      <input type="number" id="colorN" min="0" max="8" value="0" oninput="onColor(this.value)">
+      <div class="color-ball" id="colorBall"></div>
+      <div style="font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--gold)" id="colorName">Todos</div>
+    </div>
+    <div class="color-table">0=Todos · 1=Negro · 2=Blanco · 3=Gris<br>4=Rojo · 5=Azul · 6=Verde · 7=Plata · 8=Beige</div>
+    <div class="hint">💡 Correcto: paleta de colores clicable</div>
+  </div>
+
+  <!-- 9. CARROCERÍA → TEXTAREA -->
+  <div class="field">
+    <div class="field-head">
+      <span class="field-name">🚙 Carrocería</span>
+      <span class="badge-anti">✗ Textarea libre ← Botones / Select</span>
+    </div>
+    <textarea id="bodyTx" rows="2" placeholder="Escribe: Sedán, SUV, Hatchback, Familiar…" oninput="onBody(this.value)"></textarea>
+    <div class="hint">💡 Correcto: botones de tipo con iconos representativos</div>
+  </div>
+
+  <!-- 10. EXTRAS → SELECT UNO A UNO -->
+  <div class="field">
+    <div class="field-head">
+      <span class="field-name">✨ Extras</span>
+      <span class="badge-anti">✗ Select + añadir uno a uno ← Checkboxes</span>
+    </div>
+    <div class="extras-add">
+      <select id="extSel">
+        <option value="">— Elige un extra —</option>
+        <option>Aire acondicionado</option>
+        <option>GPS</option>
+        <option>Bluetooth</option>
+        <option>Cámara trasera</option>
+        <option>Cámara 360</option>
+        <option>Techo solar</option>
+        <option>Asientos calefactados</option>
+        <option>Sensores de aparcamiento</option>
+      </select>
+      <button class="btn-add" onclick="addExtra()">+ Añadir</button>
+    </div>
+    <div class="extra-tags" id="extraTags"></div>
+    <div class="hint">💡 Correcto: todos los extras visibles con checkboxes</div>
+  </div>
+
+  <!-- 11. PUERTAS → STAR RATING -->
+  <div class="field">
+    <div class="field-head">
+      <span class="field-name">🚪 Puertas</span>
+      <span class="badge-anti">✗ Valoración con estrellas ← Radio 2/3/4/5</span>
+    </div>
+    <div class="stars" id="starsWrap">
+      <span class="star" data-v="1" onclick="setDoors(1)">★</span>
+      <span class="star" data-v="2" onclick="setDoors(2)">★</span>
+      <span class="star" data-v="3" onclick="setDoors(3)">★</span>
+      <span class="star" data-v="4" onclick="setDoors(4)">★</span>
+      <span class="doors-lbl" id="doorsLbl">Cualquiera</span>
+    </div>
+    <div class="star-key">★ = 2 puertas &nbsp;·&nbsp; ★★ = 3 puertas &nbsp;·&nbsp; ★★★ = 4 puertas &nbsp;·&nbsp; ★★★★ = 5 puertas</div>
+    <div class="hint">💡 Correcto: radio buttons directos por número de puertas</div>
+  </div>
+
+  <!-- 12. PLAZAS → SLIDER VERTICAL (de nuevo) -->
+  <div class="field">
+    <div class="field-head">
+      <span class="field-name">💺 Plazas</span>
+      <span class="badge-anti">✗ Otro slider vertical ← Select / Radios</span>
+    </div>
+    <div class="seats-wrap">
+      <input type="range" class="vert" id="seatsSlider" min="0" max="4" value="0" step="1" style="height:80px" oninput="onSeats(this.value)">
+      <div>
+        <div class="seats-num" id="seatsNum">—</div>
+        <div class="seats-sub" id="seatsSub">todas</div>
+      </div>
+    </div>
+    <div class="seats-key">0=Todas · 1=2 pl. · 2=4 pl. · 3=5 pl. · 4=7 pl.</div>
+    <div class="hint">💡 Correcto: selector directo de número de plazas</div>
+  </div>
+
+  <button class="search-btn" onclick="search()">🔍 BUSCAR VEHÍCULOS</button>
+</aside>
+
+<!-- ════════ RESULTS ════════ -->
+<main class="results">
+  <div class="results-head">
+    <h2>Resultados</h2>
+    <span class="res-count" id="resCount">Mostrando 25 vehículos</span>
+  </div>
+  <div class="grid" id="grid"></div>
+</main>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════
+const BRANDS = ["Audi","BMW","Citroën","Ford","Honda","Hyundai","Kia","Mercedes","Opel","Peugeot","Renault","SEAT","Toyota","Volkswagen"];
+const FUELS  = ["Todos","Gasolina","Diésel","Híbrido","Eléctrico","GLP"];
+const FUEL_ICONS = ["🔄","⛽","🛢️","🌿","⚡","🔥"];
+const COLORS = {0:{n:"Todos",h:"transparent"},1:{n:"Negro",h:"#111"},2:{n:"Blanco",h:"#f0f0f0"},
+  3:{n:"Gris",h:"#9ca3af"},4:{n:"Rojo",h:"#ef4444"},5:{n:"Azul",h:"#3b82f6"},
+  6:{n:"Verde",h:"#22c55e"},7:{n:"Plata",h:"#cbd5e1"},8:{n:"Beige",h:"#d4b896"}};
+const COLOR_HEX = {Negro:"#111",Blanco:"#f0f0f0",Gris:"#9ca3af",Rojo:"#ef4444",Azul:"#3b82f6",Verde:"#22c55e",Plata:"#cbd5e1",Beige:"#d4b896"};
+const BODY_EMOJI = {Sedán:"🚗",SUV:"🚙",Hatchback:"🚘",Familiar:"🚌",Coupé:"🏎️"};
+const SEATS_MAP = [null,2,4,5,7];
+const DOORS_MAP = [0,2,3,4,5];
+
+const CARS = [
+  {id:1, brand:"Audi",       model:"A3",        year:2021, price:24500, km:28000,  fuel:"Gasolina",  tx:"Automático", color:"Negro",  body:"Sedán",     doors:4, seats:5, extras:["Aire acondicionado","GPS","Bluetooth","Cámara trasera"]},
+  {id:2, brand:"Audi",       model:"Q5",        year:2022, price:45000, km:14000,  fuel:"Diésel",    tx:"Automático", color:"Plata",  body:"SUV",       doors:5, seats:5, extras:["Aire acondicionado","GPS","Bluetooth","Techo solar","Cámara 360","Asientos calefactados"]},
+  {id:3, brand:"BMW",        model:"Serie 1",   year:2020, price:27000, km:35000,  fuel:"Diésel",    tx:"Manual",     color:"Blanco", body:"Hatchback", doors:5, seats:5, extras:["Aire acondicionado","Bluetooth","Sensores de aparcamiento"]},
+  {id:4, brand:"BMW",        model:"X1",        year:2022, price:38000, km:16000,  fuel:"Gasolina",  tx:"Automático", color:"Blanco", body:"SUV",       doors:5, seats:5, extras:["Aire acondicionado","GPS","Bluetooth","Cámara trasera"]},
+  {id:5, brand:"Citroën",    model:"C3",        year:2021, price:14900, km:27000,  fuel:"Gasolina",  tx:"Manual",     color:"Azul",   body:"Hatchback", doors:5, seats:5, extras:["Aire acondicionado","Bluetooth"]},
+  {id:6, brand:"Ford",       model:"Focus",     year:2018, price:14500, km:78000,  fuel:"Diésel",    tx:"Manual",     color:"Azul",   body:"Familiar",  doors:5, seats:5, extras:["Aire acondicionado"]},
+  {id:7, brand:"Ford",       model:"Puma",      year:2021, price:22500, km:29000,  fuel:"Híbrido",   tx:"Automático", color:"Rojo",   body:"SUV",       doors:5, seats:5, extras:["Aire acondicionado","GPS","Bluetooth"]},
+  {id:8, brand:"Honda",      model:"Civic",     year:2020, price:21000, km:38000,  fuel:"Gasolina",  tx:"Automático", color:"Blanco", body:"Sedán",     doors:4, seats:5, extras:["Aire acondicionado","Bluetooth","Cámara trasera"]},
+  {id:9, brand:"Hyundai",    model:"Tucson",    year:2021, price:29500, km:22000,  fuel:"Híbrido",   tx:"Automático", color:"Gris",   body:"SUV",       doors:5, seats:5, extras:["Aire acondicionado","GPS","Bluetooth","Cámara trasera","Sensores de aparcamiento"]},
+  {id:10,brand:"Hyundai",   model:"Kona",      year:2022, price:27000, km:12000,  fuel:"Eléctrico", tx:"Automático", color:"Rojo",   body:"SUV",       doors:5, seats:5, extras:["Aire acondicionado","GPS","Cámara trasera"]},
+  {id:11,brand:"Kia",        model:"Sportage",  year:2022, price:31000, km:15000,  fuel:"Híbrido",   tx:"Automático", color:"Negro",  body:"SUV",       doors:5, seats:5, extras:["Aire acondicionado","GPS","Bluetooth","Techo solar","Cámara 360"]},
+  {id:12,brand:"Kia",        model:"Niro",      year:2022, price:28000, km:8000,   fuel:"Eléctrico", tx:"Automático", color:"Verde",  body:"SUV",       doors:5, seats:5, extras:["Aire acondicionado","GPS","Bluetooth","Cámara trasera"]},
+  {id:13,brand:"Mercedes",   model:"Clase A",   year:2022, price:34000, km:18000,  fuel:"Gasolina",  tx:"Automático", color:"Plata",  body:"Sedán",     doors:4, seats:5, extras:["Aire acondicionado","GPS","Bluetooth","Techo solar","Asientos calefactados","Cámara 360"]},
+  {id:14,brand:"Mercedes",   model:"GLA",       year:2021, price:42000, km:20000,  fuel:"Gasolina",  tx:"Automático", color:"Negro",  body:"SUV",       doors:5, seats:5, extras:["Aire acondicionado","GPS","Bluetooth","Techo solar","Asientos calefactados","Cámara 360"]},
+  {id:15,brand:"Opel",       model:"Astra",     year:2019, price:16000, km:58000,  fuel:"Gasolina",  tx:"Manual",     color:"Gris",   body:"Hatchback", doors:5, seats:5, extras:["Aire acondicionado"]},
+  {id:16,brand:"Peugeot",    model:"308",       year:2020, price:17500, km:44000,  fuel:"Diésel",    tx:"Manual",     color:"Rojo",   body:"Hatchback", doors:5, seats:5, extras:["Aire acondicionado","GPS"]},
+  {id:17,brand:"Renault",    model:"Mégane",    year:2019, price:15900, km:55000,  fuel:"Diésel",    tx:"Manual",     color:"Blanco", body:"Hatchback", doors:5, seats:5, extras:["Aire acondicionado","Bluetooth"]},
+  {id:18,brand:"Renault",    model:"Zoe",       year:2021, price:24000, km:22000,  fuel:"Eléctrico", tx:"Automático", color:"Azul",   body:"Hatchback", doors:5, seats:5, extras:["Aire acondicionado","GPS","Bluetooth"]},
+  {id:19,brand:"SEAT",       model:"León",      year:2021, price:22000, km:31000,  fuel:"Gasolina",  tx:"Manual",     color:"Negro",  body:"Hatchback", doors:5, seats:5, extras:["Aire acondicionado","GPS","Bluetooth","Techo solar"]},
+  {id:20,brand:"SEAT",       model:"Ateca",     year:2020, price:25000, km:41000,  fuel:"Gasolina",  tx:"Manual",     color:"Azul",   body:"SUV",       doors:5, seats:5, extras:["Aire acondicionado","GPS","Bluetooth"]},
+  {id:21,brand:"Toyota",     model:"Yaris",     year:2022, price:19900, km:12000,  fuel:"Híbrido",   tx:"Automático", color:"Rojo",   body:"Hatchback", doors:5, seats:5, extras:["Aire acondicionado","GPS","Cámara trasera"]},
+  {id:22,brand:"Toyota",     model:"RAV4",      year:2022, price:36000, km:11000,  fuel:"Híbrido",   tx:"Automático", color:"Gris",   body:"SUV",       doors:5, seats:7, extras:["Aire acondicionado","GPS","Bluetooth","Cámara 360","Techo solar"]},
+  {id:23,brand:"Volkswagen", model:"Golf",      year:2019, price:18500, km:62000,  fuel:"Gasolina",  tx:"Manual",     color:"Gris",   body:"Hatchback", doors:5, seats:5, extras:["Aire acondicionado","Bluetooth"]},
+  {id:24,brand:"Volkswagen", model:"Passat",    year:2020, price:26500, km:48000,  fuel:"Diésel",    tx:"Automático", color:"Negro",  body:"Familiar",  doors:5, seats:5, extras:["Aire acondicionado","GPS","Bluetooth","Asientos calefactados"]},
+  {id:25,brand:"Volkswagen", model:"ID.3",      year:2022, price:32000, km:14000,  fuel:"Eléctrico", tx:"Automático", color:"Blanco", body:"Hatchback", doors:5, seats:5, extras:["Aire acondicionado","GPS","Bluetooth","Cámara trasera"]},
+];
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+const F = {
+  brand:null, model:null,
+  yFrom:2010, yTo:2024,
+  priceRanges:[],
+  maxKm:300000,
+  fuel:null,
+  tx:null,
+  colorN:0,
+  body:"",
+  extras:[],
+  doors:0,
+  seatsIdx:0
+};
+let activeStar = 0;
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+function initModels(){
+  const g = document.getElementById("modGrid");
+  const models = [...new Set(CARS.map(c=>c.model))].sort();
+  g.innerHTML = `<label style="grid-column:1/-1"><input type="radio" name="mod" value="" onchange="F.model=null"> <em style="color:var(--muted)">Todos los modelos</em></label>`;
+  models.forEach(m => {
+    g.innerHTML += `<label><input type="radio" name="mod" value="${m}" onchange="F.model='${m}'"> ${m}</label>`;
+  });
+}
+
+// ═══════════════════════════════════════════════
+// HANDLERS
+// ═══════════════════════════════════════════════
+function onBrand(v){
+  const i = parseInt(v);
+  F.brand = i<0 ? null : BRANDS[i];
+  document.getElementById("brandDisp").textContent = i<0 ? "⭐ Todas las marcas" : BRANDS[i];
+}
+
+function onYear(){
+  const f = document.getElementById("yFrom").value;
+  const t = document.getElementById("yTo").value;
+  F.yFrom = f ? parseInt(f) : 2010;
+  F.yTo   = t ? parseInt(t) : 2024;
+  document.getElementById("yDisp").textContent = `Rango: ${F.yFrom} — ${F.yTo}`;
+}
+
+function onPrice(){
+  F.priceRanges = [...document.querySelectorAll(".price-grid input:checked")].map(el=>{
+    const [a,b]=el.value.split("-").map(Number); return {min:a,max:b};
+  });
+}
+
+function onKm(v){
+  F.maxKm = parseInt(v);
+  document.getElementById("kmVal").textContent = `≤ ${parseInt(v).toLocaleString("es-ES")} km`;
+}
+
+function onFuel(v){
+  const i = parseInt(v);
+  F.fuel = i===0 ? null : FUELS[i];
+  document.getElementById("fuelDisp").textContent = `${FUEL_ICONS[i]} ${FUELS[i]}`;
+}
+
+function onTx(v){
+  if(!v){F.tx=null;return;}
+  const day = parseInt(v.split("-")[2]);
+  const badge = document.getElementById("txBadge");
+  const lbl   = document.getElementById("txLabel");
+  if(day===15){
+    F.tx=null; badge.textContent="Todas"; badge.className="tx-badge b-any"; lbl.textContent="Día 15 →";
+  }else if(day%2===0){
+    F.tx="Automático"; badge.textContent="Automático"; badge.className="tx-badge b-auto"; lbl.textContent=`Día ${day} (par) →`;
+  }else{
+    F.tx="Manual"; badge.textContent="Manual"; badge.className="tx-badge b-manual"; lbl.textContent=`Día ${day} (impar) →`;
+  }
+}
+
+function onColor(v){
+  const n = Math.min(8,Math.max(0,parseInt(v)||0));
+  F.colorN = n;
+  document.getElementById("colorBall").style.background = n===0?"var(--s4)":COLORS[n].h;
+  document.getElementById("colorBall").style.borderColor = n===0?"var(--border2)":COLORS[n].h;
+  document.getElementById("colorName").textContent = COLORS[n].n;
+}
+
+function onBody(v){ F.body = v.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""); }
+
+function addExtra(){
+  const s = document.getElementById("extSel");
+  if(!s.value||F.extras.includes(s.value)) return;
+  F.extras.push(s.value);
+  renderExtras(); s.value="";
+}
+function removeExtra(e){ F.extras=F.extras.filter(x=>x!==e); renderExtras(); }
+function renderExtras(){
+  document.getElementById("extraTags").innerHTML = F.extras.map(e=>
+    `<span class="etag">${e} <button onclick="removeExtra('${e}')">×</button></span>`
+  ).join("");
+}
+
+function setDoors(v){
+  if(activeStar===v){activeStar=0;F.doors=0;}
+  else{activeStar=v;F.doors=DOORS_MAP[v];}
+  document.querySelectorAll(".star").forEach((s,i)=>s.classList.toggle("on",i<activeStar));
+  document.getElementById("doorsLbl").textContent = F.doors ? `${F.doors} puertas` : "Cualquiera";
+}
+
+function onSeats(v){
+  const i=parseInt(v); F.seatsIdx=i;
+  const n=SEATS_MAP[i];
+  document.getElementById("seatsNum").textContent = n||"—";
+  document.getElementById("seatsSub").textContent = n?"plazas":"todas";
+}
+
+// ═══════════════════════════════════════════════
+// FILTER + RENDER
+// ═══════════════════════════════════════════════
+function search(){
+  let res = CARS.slice();
+  if(F.brand) res=res.filter(c=>c.brand===F.brand);
+  if(F.model) res=res.filter(c=>c.model===F.model);
+  res=res.filter(c=>c.year>=F.yFrom && c.year<=F.yTo);
+  if(F.priceRanges.length) res=res.filter(c=>F.priceRanges.some(r=>c.price>=r.min&&c.price<=r.max));
+  res=res.filter(c=>c.km<=F.maxKm);
+  if(F.fuel) res=res.filter(c=>c.fuel===F.fuel);
+  if(F.tx)   res=res.filter(c=>c.tx===F.tx);
+  if(F.colorN>0){const cn=COLORS[F.colorN].n; res=res.filter(c=>c.color===cn);}
+  if(F.body){
+    res=res.filter(c=>{
+      const norm=c.body.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+      return norm.includes(F.body)||F.body.includes(norm.slice(0,4));
+    });
+  }
+  if(F.extras.length) res=res.filter(c=>F.extras.every(e=>c.extras.includes(e)));
+  if(F.doors) res=res.filter(c=>c.doors===F.doors);
+  if(F.seatsIdx>0){const t=SEATS_MAP[F.seatsIdx]; if(t) res=res.filter(c=>c.seats===t);}
+  renderCars(res);
+}
+
+function renderCars(cars){
+  document.getElementById("resCount").textContent = `${cars.length} de ${CARS.length} vehículos`;
+  const g = document.getElementById("grid");
+  if(!cars.length){
+    g.innerHTML=`<div class="nores"><em>😵</em><strong>Sin resultados</strong><p>Prueba a ajustar los filtros…<br>si logras entenderlos.</p></div>`;
+    return;
+  }
+  g.innerHTML = cars.map(c=>`
+    <div class="card">
+      <div class="card-img">
+        ${BODY_EMOJI[c.body]||"🚗"}
+        <span class="card-year">${c.year}</span>
+      </div>
+      <div class="card-body">
+        <div class="card-brand">${c.brand}</div>
+        <div class="card-name">${c.model}</div>
+        <div class="card-sub">${c.body} · ${c.tx}</div>
+        <div class="card-price">${c.price.toLocaleString("es-ES")} €</div>
+        <div class="specs">
+          <div class="spec"><div class="spec-k">Combustible</div><div class="spec-v">${c.fuel}</div></div>
+          <div class="spec"><div class="spec-k">Kilómetros</div><div class="spec-v">${c.km.toLocaleString("es-ES")} km</div></div>
+          <div class="spec"><div class="spec-k">Puertas / Plazas</div><div class="spec-v">${c.doors}p / ${c.seats} pl.</div></div>
+          <div class="spec"><div class="spec-k">Color</div><div class="spec-v"><span class="cdot" style="background:${COLOR_HEX[c.color]||"#444"}"></span>${c.color}</div></div>
+        </div>
+        <div class="extags">${c.extras.map(e=>`<span class="xtag">${e}</span>`).join("")}</div>
+      </div>
+    </div>
+  `).join("");
+}
+
+function resetAll(){
+  Object.assign(F,{brand:null,model:null,yFrom:2010,yTo:2024,priceRanges:[],maxKm:300000,fuel:null,tx:null,colorN:0,body:"",extras:[],doors:0,seatsIdx:0});
+  activeStar=0;
+  document.getElementById("brandSlider").value=-1; onBrand(-1);
+  document.querySelector('input[name="mod"][value=""]').checked=true;
+  document.getElementById("yFrom").value="2010-01";
+  document.getElementById("yTo").value="2024-12"; onYear();
+  document.querySelectorAll(".price-grid input").forEach(el=>el.checked=false);
+  document.getElementById("kmSlider").value=300000; onKm(300000);
+  document.getElementById("fuelSlider").value=0; onFuel(0);
+  document.getElementById("txDate").value=""; F.tx=null;
+  document.getElementById("txBadge").textContent="Todas";
+  document.getElementById("txBadge").className="tx-badge b-any";
+  document.getElementById("txLabel").textContent="Elige una fecha…";
+  document.getElementById("colorN").value=0; onColor(0);
+  document.getElementById("bodyTx").value="";
+  F.extras=[]; renderExtras();
+  document.querySelectorAll(".star").forEach(s=>s.classList.remove("on"));
+  document.getElementById("doorsLbl").textContent="Cualquiera";
+  document.getElementById("seatsSlider").value=0; onSeats(0);
+  renderCars(CARS);
+}
+
+// ══ BOOT ══
+initModels();
+onColor(0);
+onSeats(0);
+renderCars(CARS);
+</script>
+</body>
+</html>
