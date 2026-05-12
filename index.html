@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BuScAdOr De AuToS - GRATIS!!! ★ OFICIAL ★</title>
+<style>
+  /* =============================================
+     ESQUEMA DE COLORES: DELIBERADAMENTE TERRIBLE
+     Fondo morado rayado, texto rojo, labels amarillo
+     sobre naranja, bordes en verde neón.
+  ============================================= */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background-color: #6600CC;
+    background-image:
+      repeating-linear-gradient(45deg,
+        rgba(255,0,0,0.08) 0px, rgba(255,0,0,0.08) 2px,
+        transparent 2px, transparent 12px),
+      repeating-linear-gradient(-45deg,
+        rgba(0,255,0,0.05) 0px, rgba(0,255,0,0.05) 2px,
+        transparent 2px, transparent 12px);
+    color: #FF0000;
+    font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
+    min-height: 100vh;
+    padding: 15px;
+  }
+
+  /* TÍTULO PARPADEANTE */
+  @keyframes blink { 0%,100%{opacity:1} 49%{opacity:1} 50%{opacity:0.1} 99%{opacity:0.1} }
+  @keyframes spin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+  @keyframes shake  { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+  @keyframes progress-stuck {
+    0%{width:0%} 60%{width:85%} 80%{width:91%} 90%{width:94%} 95%{width:96%} 100%{width:97%}
+  }
+
+  h1 {
+    text-align: center;
+    color: #FFFF00;
+    text-shadow: 3px 3px 0 #FF0000, -2px -2px 0 #00FF00, 2px -2px 0 #FF00FF;
+    font-size: clamp(22px, 5vw, 42px);
+    background: linear-gradient(90deg, #FF6600, #FF0000, #FF6600);
+    padding: 12px 20px;
+    border: 6px dashed #00FFFF;
+    transform: skew(-3deg);
+    animation: blink 1.2s infinite;
+    line-height: 1.4;
+  }
+  h1 span { font-size: 0.35em; color: #00FFFF; display: block; animation: none; opacity:1; }
+
+  /* SESSION TIMER */
+  #session-bar {
+    background: #FF0000;
+    color: #FF9900;
+    font-size: 11px;
+    padding: 4px 12px;
+    border: 2px solid #00FFFF;
+    text-align: right;
+    margin: 10px 0 6px;
+    font-weight: bold;
+  }
+  #session-bar span { color: #FFFF00; font-size: 15px; }
+
+  /* BARRA DE BÚSQUEDA DECORATIVA (no funciona) */
+  .fake-search {
+    width: 100%;
+    background: #FFFFFF;
+    color: #CCCCCC;
+    border: 2px dashed #AAAAAA;
+    padding: 9px 12px;
+    font-family: inherit;
+    font-size: 13px;
+    margin-bottom: 12px;
+    cursor: not-allowed;
+  }
+
+  /* PANEL DE FILTROS */
+  .filters-panel {
+    background: #FF9900;
+    border: 8px dotted #00FF00;
+    border-radius: 0 30px 0 30px;
+    padding: 18px 20px 10px;
+    margin-bottom: 14px;
+  }
+  .filters-panel h2 {
+    color: #0000FF;
+    background: #FF00FF;
+    text-align: center;
+    padding: 5px;
+    font-size: 12px;
+    letter-spacing: 7px;
+    margin-bottom: 18px;
+    border: 2px solid #FFFF00;
+  }
+
+  .filter-row { margin-bottom: 18px; }
+  .filter-row.indent-a { margin-left: 47px; }
+  .filter-row.indent-b { margin-left: 20px; margin-right: 30px; }
+  .filter-row.indent-c { margin-left: 95px; }
+
+  label.filter-label {
+    display: block;
+    color: #FF0000;
+    background: #FFFF00;
+    font-weight: bold;
+    font-size: 12.5px;
+    padding: 2px 6px;
+    margin-bottom: 5px;
+    border-left: 4px solid #FF00FF;
+  }
+  .hint {
+    font-size: 9px;
+    color: #000080;
+    text-align: right;
+    margin-top: 2px;
+    font-style: italic;
+  }
+  .hint.red { color: #FF0000; }
+
+  /* === PASO 1: RULETA DE MARCA === */
+  .slot-window {
+    background: #000080;
+    border: 4px solid #FF00FF;
+    height: 54px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .slot-display {
+    font-size: 22px;
+    font-weight: bold;
+    color: #FFFF00;
+    text-align: center;
+    padding: 0 12px;
+    white-space: nowrap;
+  }
+  .slot-scanline {
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(transparent, transparent 3px, rgba(0,0,0,0.15) 3px, rgba(0,0,0,0.15) 4px);
+    pointer-events: none;
+  }
+  .slot-btns { display: flex; gap: 6px; margin-top: 6px; justify-content: center; }
+  .slot-btn {
+    border: 3px solid #00FF00;
+    padding: 6px 18px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: bold;
+  }
+  .btn-spin  { background: #FF0000; color: #FFFF00; }
+  .btn-stop  { background: #00AA00; color: #000000; }
+  .btn-reset { background: #0000CC; color: #FFFFFF; }
+  .slot-btn:hover { filter: brightness(0.85); }
+
+  /* === PASO 2: SLIDER INVERTIDO === */
+  .inverted-slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 18px;
+    background: linear-gradient(90deg, #FF00FF, #9900CC);
+    outline: none;
+    border-radius: 0;
+    transform: scaleX(-1); /* invertido visualmente */
+    border: 2px solid #FFFF00;
+    display: block;
+  }
+  .inverted-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 28px; height: 28px;
+    background: #00FF00;
+    border: 3px solid #FF0000;
+    cursor: pointer;
+    border-radius: 0;
+  }
+  .inverted-slider::-moz-range-thumb {
+    width: 28px; height: 28px;
+    background: #00FF00;
+    border: 3px solid #FF0000;
+    cursor: pointer;
+    border-radius: 0;
+  }
+  .slider-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    color: #000080;
+    margin-top: 2px;
+  }
+  #year-val {
+    font-size: 15px;
+    font-weight: bold;
+    color: #FF0000;
+    background: #FFFF00;
+    padding: 0 6px;
+  }
+
+  /* === PASOS 3 y 4: STEPPERS === */
+  .stepper { display: flex; align-items: center; gap: 6px; }
+  .step-btn {
+    background: #FF00FF;
+    color: #000000;
+    border: 3px solid #FFFF00;
+    width: 32px; height: 32px;
+    font-size: 22px; line-height: 1;
+    cursor: pointer;
+    font-weight: bold;
+    font-family: inherit;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .step-display {
+    font-size: 17px;
+    font-weight: bold;
+    padding: 5px 14px;
+    min-width: 160px;
+    text-align: center;
+    display: inline-block;
+    border: 2px solid #FF0000;
+  }
+  #price-disp { background: #000080; color: #00FF00; }
+  #km-disp    { background: #FF00FF; color: #FFFF00; }
+
+  /* === CHECKBOX CONFUSO === */
+  .confused-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    cursor: pointer;
+    margin-bottom: 3px;
+  }
+  .confused-check input { width: 20px; height: 20px; accent-color: #FF0000; margin-top: 1px; flex-shrink: 0; }
+  .confused-check span  { color: #FF0000; background: #FFFF00; padding: 1px 5px; font-size: 13px; font-weight: bold; }
+
+  /* === ORDENAR POR === */
+  #sort-select {
+    background: #FF00FF;
+    color: #0000FF;
+    border: 4px solid #FFFF00;
+    font-family: inherit;
+    font-size: 14px;
+    padding: 6px 8px;
+    width: 100%;
+    outline: none;
+  }
+
+  /* === BOTÓN BUSCAR (SE ESCAPA) === */
+  #search-btn {
+    display: block;
+    margin: 14px auto 6px;
+    background: linear-gradient(45deg, #FF0000 0%, #FFFF00 50%, #FF0000 100%);
+    color: #0000FF;
+    border: 5px solid #00FF00;
+    padding: 14px 40px;
+    font-size: 20px;
+    font-family: inherit;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    letter-spacing: 2px;
+    position: relative;
+    transition: transform 0.18s ease;
+  }
+  #search-btn:hover {
+    transform: translateX(220px) translateY(-60px) rotate(18deg) scale(1.1);
+  }
+  #search-btn-hint {
+    text-align: center;
+    font-size: 9px;
+    color: #0000FF;
+    margin-top: 2px;
+  }
+
+  /* === MODAL DE CARGA === */
+  #loading-modal {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.88);
+    z-index: 9999;
+    align-items: center; justify-content: center;
+  }
+  .loading-box {
+    background: #FF6600;
+    border: 6px solid #00FF00;
+    padding: 36px 40px;
+    text-align: center;
+    font-family: 'Comic Sans MS', cursive;
+    max-width: 340px;
+    width: 90%;
+  }
+  .loading-box .spin-car { font-size: 52px; display: inline-block; animation: spin 0.4s linear infinite; }
+  .loading-box h3 { color: #0000FF; font-size: 26px; margin: 8px 0 6px; }
+  #loading-msg   { color: #FF0000; font-size: 13px; min-height: 20px; }
+  .progress-track {
+    background: #000080;
+    height: 22px;
+    width: 100%;
+    margin: 10px 0 6px;
+    overflow: hidden;
+    border: 2px solid #FFFF00;
+    position: relative;
+  }
+  #progress-bar { height: 100%; background: #FF0000; width: 0%; transition: width 0.15s linear; }
+  #progress-pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #FFFF00; font-size: 12px; font-weight: bold; }
+  .loading-note { font-size: 9px; color: #FFFF00; margin-top: 4px; }
+
+  /* === RESULTADOS === */
+  #results-area { margin-top: 14px; }
+  .results-header { color: #FFFF00; font-size: 12px; text-align: right; margin-bottom: 6px; }
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(195px, 1fr));
+    gap: 8px;
+  }
+  .car-card {
+    background: #FF6600;
+    border: 4px solid #9900FF;
+    padding: 9px 8px;
+    color: #000080;
+    position: relative;
+    overflow: hidden;
+  }
+  .car-card .car-icon { font-size: 50px; display: block; text-align: center; margin-bottom: 4px; }
+  .card-brand { font-size: 11px; color: #6600CC; text-align: right; font-weight: bold; }
+  /* PRECIO: casi invisible — mismo color que el fondo */
+  .card-price { font-size: 4px; color: #FF6600; letter-spacing: -0.5px; margin: 2px 0; }
+  .card-year  { font-size: 9px; writing-mode: vertical-rl; position: absolute; top: 6px; left: 6px; color: #000080; }
+  .card-km    { font-size: 8px; color: #9900FF; margin: 2px 0; }
+  .card-color { font-size: 7px; color: #003300; background: #004400; display: inline-block; padding: 0 3px; }
+  /* Estado de disponibilidad: texto invisible sobre fondo oscuro en la esquina */
+  .card-avail {
+    position: absolute; top: 0; right: 0;
+    font-size: 3px; color: #FF6600; background: #FF0000; /* texto mismo color fondo → invisible */
+    padding: 1px 2px;
+    line-height: 1;
+  }
+
+  /* EMPTY STATE */
+  .no-results {
+    background: #FF0000;
+    border: 5px solid #00FF00;
+    color: #FFFF00;
+    text-align: center;
+    padding: 22px;
+    font-size: 22px;
+  }
+  .no-results small { display: block; font-size: 11px; color: #0000FF; margin-top: 6px; }
+  .no-results .micro { font-size: 9px; color: #FF9900; margin-top: 4px; }
+
+  /* PLACEHOLDER INICIAL */
+  #placeholder {
+    text-align: center;
+    color: #FFFF00;
+    font-size: 18px;
+    padding: 30px 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- TÍTULO PARPADEANTE -->
+<h1>
+  🚗💥 BUSCADOR DE AUTOS GRATIS!!! 💥🚗
+  <span>★ VERSIÓN BETA EXPERIMENTAL ★ NO USAR EN PRODUCCIÓN ★ PATENTADO ★</span>
+</h1>
+
+<!-- CONTADOR DE SESIÓN (resetea filtros al llegar a 0) -->
+<div id="session-bar">
+  ⚠️ SESIÓN EXPIRA EN: <span id="session-countdown">60</span>s — Los filtros se reiniciarán automáticamente por seguridad
+</div>
+
+<!-- BARRA DE BÚSQUEDA DECORATIVA (completamente inútil) -->
+<input
+  class="fake-search"
+  type="text"
+  placeholder="🔍  Escribe aquí el auto que buscas... (campo decorativo — no funciona, use los filtros abajo)"
+  disabled
+>
+
+<!-- PANEL DE FILTROS -->
+<div class="filters-panel">
+  <h2>— P A R Á M E T R O S &nbsp; D E &nbsp; B Ú S Q U E D A &nbsp; A V A N Z A D A —</h2>
+
+  <!-- PASO 1: RULETA PARA SELECCIONAR MARCA -->
+  <div class="filter-row">
+    <label class="filter-label">PASO 1: GIRE LA RULETA PARA ELEGIR MARCA 🎰</label>
+    <div class="slot-window" id="slot-window">
+      <div class="slot-display" id="slot-display">??? CUALQUIERA ???</div>
+      <div class="slot-scanline"></div>
+    </div>
+    <div class="slot-btns">
+      <button class="slot-btn btn-spin"  onclick="startSlot()">🎰 GIRAR</button>
+      <button class="slot-btn btn-stop"  onclick="stopSlot()">🛑 PARAR</button>
+      <button class="slot-btn btn-reset" onclick="resetSlot()">↩ TODAS</button>
+    </div>
+    <div class="hint">*Si no aparece la marca deseada, vuelva a girar hasta conseguirla</div>
+  </div>
+
+  <!-- PASO 2: AÑO — SLIDER INVERTIDO CON ETIQUETAS FALSAS -->
+  <div class="filter-row indent-a">
+    <label class="filter-label">PASO 2: AÑO MÍNIMO &nbsp;(← más nuevo &nbsp;|&nbsp; más viejo →)</label>
+    <input type="range" class="inverted-slider" id="year-slider" min="1990" max="2024" value="2010">
+    <div class="slider-labels">
+      <span>2024 <em>(VIEJO)</em></span>
+      <span id="year-val">AÑO: 2010</span>
+      <span>1990 <em>(NUEVO)</em></span>
+    </div>
+    <div class="hint">*Deslice hacia la derecha para ver autos más nuevos</div>
+  </div>
+
+  <!-- PASO 3: PRECIO — STEPPER DE $1.000 en $1.000 -->
+  <div class="filter-row indent-c">
+    <label class="filter-label">PASO 3: PRECIO MÁXIMO &nbsp;(de a $1.000 por toque)</label>
+    <div class="stepper">
+      <button class="step-btn" onclick="changePrice(-1000)">−</button>
+      <span class="step-display" id="price-disp">$50.000</span>
+      <button class="step-btn" onclick="changePrice(+1000)">+</button>
+    </div>
+    <div class="hint">*Precio máximo posible: $500.000. Use los botones repetidamente.</div>
+  </div>
+
+  <!-- PASO 4: KM — STEPPER DE 1 en 1 -->
+  <div class="filter-row indent-b">
+    <label class="filter-label">PASO 4: KILOMETRAJE MÁXIMO &nbsp;(de a 1 km por toque 😊)</label>
+    <div class="stepper">
+      <button class="step-btn" onclick="changeKm(-1)">−</button>
+      <span class="step-display" id="km-disp">100.000 km</span>
+      <button class="step-btn" onclick="changeKm(+1)">+</button>
+    </div>
+    <div class="hint red">*Tip: mantenga presionado el botón para ir más rápido... (no funciona)</div>
+  </div>
+
+  <!-- PASO 5: CHECKBOX CONFUSO (label contradice la lógica real) -->
+  <div class="filter-row" style="margin-left:60px; margin-right:40px">
+    <label class="confused-check">
+      <input type="checkbox" id="avail-check" checked>
+      <span>INCLUIR AUTOS NO DISPONIBLES &nbsp;(recomendado ✔)</span>
+    </label>
+    <div class="hint">*Marcar esta opción oculta los resultados no disponibles del listado</div>
+  </div>
+
+  <!-- PASO 6: ORDENAR POR (opciones inútiles) -->
+  <div class="filter-row" style="margin-left:112px">
+    <label class="filter-label">PASO 6: ORDENAR RESULTADOS POR</label>
+    <select id="sort-select">
+      <option value="random">Orden aleatorio (recomendado por el sistema)</option>
+      <option value="name_z">Modelo Z → A (orden inverso)</option>
+      <option value="km_desc">Más kilometraje primero</option>
+      <option value="price_asc">Precio menos conveniente</option>
+      <option value="year_asc">Más viejo primero</option>
+    </select>
+  </div>
+
+  <!-- BOTÓN QUE SE ESCAPA AL HACER HOVER -->
+  <button id="search-btn" onclick="performSearch()">🔍 BUSCAR AUTOS AHORA 🔍</button>
+  <div id="search-btn-hint">*El botón se desplaza al pasar el cursor. Es una función de seguridad anti-clics accidentales.</div>
+</div>
+
+<!-- ÁREA DE RESULTADOS -->
+<div id="results-area">
+  <div id="placeholder">👆 Complete los PASOS 1 al 6 y presione el botón para ver resultados</div>
+</div>
+
+<!-- MODAL DE CARGA FALSA -->
+<div id="loading-modal">
+  <div class="loading-box">
+    <div class="spin-car">🚗</div>
+    <h3>BUSCANDO AUTOS...</h3>
+    <div id="loading-msg">Iniciando motor de búsqueda...</div>
+    <div class="progress-track">
+      <div id="progress-bar"></div>
+      <div id="progress-pct">0%</div>
+    </div>
+    <div class="loading-note">Por favor no cierre esta ventana, no actualice la página,<br>ni respire hasta que termine el proceso.</div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATOS MOCKEADOS
+// ============================================================
+const CARS = [
+  { id:1,  brand:'Toyota',     model:'Corolla',  year:2020, price:22000, km:45000,  available:true  },
+  { id:2,  brand:'Toyota',     model:'Hilux',    year:2019, price:35000, km:80000,  available:true  },
+  { id:3,  brand:'Toyota',     model:'Yaris',    year:2022, price:18000, km:12000,  available:false },
+  { id:4,  brand:'Ford',       model:'Ranger',   year:2021, price:38000, km:30000,  available:true  },
+  { id:5,  brand:'Ford',       model:'Focus',    year:2018, price:15000, km:95000,  available:true  },
+  { id:6,  brand:'Ford',       model:'EcoSport', year:2020, price:20000, km:55000,  available:false },
+  { id:7,  brand:'Chevrolet',  model:'Cruze',    year:2019, price:17000, km:70000,  available:true  },
+  { id:8,  brand:'Chevrolet',  model:'S10',      year:2022, price:40000, km:15000,  available:true  },
+  { id:9,  brand:'BMW',        model:'320i',     year:2021, price:55000, km:25000,  available:true  },
+  { id:10, brand:'BMW',        model:'X5',       year:2020, price:85000, km:40000,  available:false },
+  { id:11, brand:'Mercedes',   model:'Clase C',  year:2022, price:72000, km:8000,   available:true  },
+  { id:12, brand:'Mercedes',   model:'Clase A',  year:2019, price:45000, km:60000,  available:true  },
+  { id:13, brand:'Volkswagen', model:'Golf',     year:2020, price:25000, km:50000,  available:true  },
+  { id:14, brand:'Volkswagen', model:'Amarok',   year:2021, price:42000, km:20000,  available:false },
+  { id:15, brand:'Honda',      model:'Civic',    year:2022, price:28000, km:10000,  available:true  },
+  { id:16, brand:'Honda',      model:'CR-V',     year:2020, price:32000, km:45000,  available:true  },
+  { id:17, brand:'Hyundai',    model:'Tucson',   year:2021, price:30000, km:35000,  available:true  },
+  { id:18, brand:'Hyundai',    model:'i30',      year:2019, price:19000, km:75000,  available:false },
+  { id:19, brand:'Audi',       model:'A3',       year:2022, price:48000, km:5000,   available:true  },
+  { id:20, brand:'Audi',       model:'Q5',       year:2021, price:68000, km:18000,  available:true  },
+  { id:21, brand:'Renault',    model:'Duster',   year:2020, price:21000, km:60000,  available:true  },
+  { id:22, brand:'Renault',    model:'Sandero',  year:2019, price:13000, km:90000,  available:false },
+  { id:23, brand:'Peugeot',    model:'208',      year:2022, price:16000, km:8000,   available:true  },
+  { id:24, brand:'Peugeot',    model:'3008',     year:2021, price:35000, km:28000,  available:true  },
+];
+
+const BRANDS = ['CUALQUIERA', ...new Set(CARS.map(c => c.brand))];
+const ICONS  = ['🚗','🚙','🏎️','🚕','🚐','🛻','🚌','🚑'];
+
+// ============================================================
+// ESTADO
+// ============================================================
+let selectedBrand = 'CUALQUIERA';
+let maxPrice      = 50000;
+let maxKm         = 100000;
+let slotRunning   = false;
+let slotTimer     = null;
+let slotIdx       = 0;
+let sessionLeft   = 60;
+
+// ============================================================
+// RULETA (SLOT MACHINE) — cicla texto en el display
+// ============================================================
+function buildSlot() {
+  document.getElementById('slot-display').textContent = '🎰  ' + BRANDS[0] + '  🎰';
+}
+
+function startSlot() {
+  if (slotRunning) return;
+  slotRunning = true;
+  slotTimer = setInterval(() => {
+    slotIdx = (slotIdx + 1) % BRANDS.length;
+    document.getElementById('slot-display').textContent = '🎰  ' + BRANDS[slotIdx] + '  🎰';
+  }, 90);
+}
+
+function stopSlot() {
+  if (!slotRunning) return;
+  clearInterval(slotTimer);
+  slotRunning   = false;
+  selectedBrand = BRANDS[slotIdx];
+  document.getElementById('slot-display').textContent = '✅  ' + selectedBrand + '  ✅';
+}
+
+function resetSlot() {
+  clearInterval(slotTimer);
+  slotRunning   = false;
+  slotIdx        = 0;
+  selectedBrand  = 'CUALQUIERA';
+  document.getElementById('slot-display').textContent = '🎰  ' + BRANDS[0] + '  🎰';
+}
+
+// ============================================================
+// SLIDER DE AÑO (invertido visualmente, etiquetas incorrectas)
+// ============================================================
+const yearSlider = document.getElementById('year-slider');
+const yearVal    = document.getElementById('year-val');
+yearSlider.addEventListener('input', () => {
+  yearVal.textContent = `AÑO: ${yearSlider.value}`;
+});
+
+// ============================================================
+// STEPPER DE PRECIO ($1.000 incrementos)
+// ============================================================
+function changePrice(delta) {
+  maxPrice = Math.max(0, Math.min(500000, maxPrice + delta));
+  document.getElementById('price-disp').textContent =
+    '$' + maxPrice.toLocaleString('es-AR');
+}
+
+// ============================================================
+// STEPPER DE KM (+1/-1 — agónico)
+// ============================================================
+function changeKm(delta) {
+  maxKm = Math.max(0, Math.min(500000, maxKm + delta));
+  document.getElementById('km-disp').textContent =
+    maxKm.toLocaleString('es-AR') + ' km';
+}
+
+// ============================================================
+// TEMPORIZADOR DE SESIÓN (resetea todo al llegar a 0)
+// ============================================================
+function startSessionTimer() {
+  const el = document.getElementById('session-countdown');
+  setInterval(() => {
+    sessionLeft--;
+    el.textContent = sessionLeft;
+    if (sessionLeft <= 0) {
+      sessionLeft = 60;
+      resetAllFilters();
+      alert(
+        '⏱️ SESIÓN EXPIRADA\n\n' +
+        'Por razones de seguridad, sus filtros han sido\n' +
+        'reiniciados automáticamente.\n\n' +
+        'Por favor comience el proceso nuevamente.'
+      );
+    }
+  }, 1000);
+}
+
+function resetAllFilters() {
+  resetSlot();
+  yearSlider.value    = 2010;
+  yearVal.textContent = 'AÑO: 2010';
+  maxPrice = 50000;
+  maxKm    = 100000;
+  document.getElementById('price-disp').textContent  = '$50.000';
+  document.getElementById('km-disp').textContent     = '100.000 km';
+  document.getElementById('avail-check').checked     = true;
+  document.getElementById('sort-select').value       = 'random';
+  document.getElementById('results-area').innerHTML  =
+    '<div id="placeholder">👆 Ses­ión reiniciada. Complete los PASOS 1 al 6 nuevamente.</div>';
+}
+
+// ============================================================
+// BÚSQUEDA Y FILTRADO
+// ============================================================
+function performSearch() {
+  showLoadingThen(() => {
+    const minYear = parseInt(yearSlider.value);
+    // Checkbox mal etiquetado:
+    //   checked (default, "recomendado") → muestra solo available=true
+    //   unchecked                        → muestra TODO (incluyendo no disponibles)
+    const checkboxChecked = document.getElementById('avail-check').checked;
+    const sortBy = document.getElementById('sort-select').value;
+
+    let results = CARS.filter(car => {
+      const brandOk = selectedBrand === 'CUALQUIERA' || car.brand === selectedBrand;
+      const yearOk  = car.year >= minYear;
+      const priceOk = car.price <= maxPrice;
+      const kmOk    = car.km <= maxKm;
+      // Lógica intencionalmente opuesta al label
+      const availOk = checkboxChecked ? car.available === true : true;
+      return brandOk && yearOk && priceOk && kmOk && availOk;
+    });
+
+    // Ordenar por opciones inútiles
+    switch (sortBy) {
+      case 'random':   results.sort(() => Math.random() - 0.5);               break;
+      case 'name_z':   results.sort((a,b) => b.model.localeCompare(a.model)); break;
+      case 'km_desc':  results.sort((a,b) => b.km - a.km);                    break;
+      case 'price_asc':results.sort((a,b) => a.price - b.price);              break; // "menos conveniente" = más barato primero, sin sentido
+      case 'year_asc': results.sort((a,b) => a.year - b.year);                break;
+    }
+
+    renderResults(results);
+  });
+}
+
+// ============================================================
+// RENDER DE RESULTADOS
+// Precio imperceptible, campos en orden aleatorio, tarjetas rotadas
+// ============================================================
+function renderResults(cars) {
+  const area = document.getElementById('results-area');
+
+  if (!cars.length) {
+    area.innerHTML = `
+      <div class="no-results">
+        ❌ NO SE ENCONTRARON RESULTADOS ❌
+        <small>Quizás el vehículo que busca no existe en nuestro sistema.</small>
+        <div class="micro">
+          Recuerde: si el checkbox "INCLUIR NO DISPONIBLES" está marcado,
+          los autos no disponibles NO aparecerán. Es así por diseño.
+        </div>
+      </div>`;
+    return;
+  }
+
+  const sortLabel = document.getElementById('sort-select')
+    .options[document.getElementById('sort-select').selectedIndex].text;
+
+  const header = `<div class="results-header">
+    Se encontraron <strong>${cars.length}</strong> resultado(s) — Orden: ${sortLabel}
+  </div>`;
+
+  const cards = cars.map(car => {
+    // Campos en orden aleatorio cada render
+    const fields = [
+      `<div class="card-brand">${car.brand}</div>`,
+      `<div class="card-price">PRECIO: $${car.price.toLocaleString('es-AR')} USD</div>`,
+      `<div class="card-km">KM: ${car.km.toLocaleString('es-AR')}</div>`,
+    ];
+    fields.sort(() => Math.random() - 0.5);
+
+    const icon  = ICONS[Math.floor(Math.random() * ICONS.length)];
+    const rot   = ((Math.random() - 0.5) * 5).toFixed(1);
+    const avail = car.available ? 'DISPONIBLE' : 'NO DISPONIBLE';
+
+    return `
+      <div class="car-card" style="transform:rotate(${rot}deg)">
+        <div class="card-year">${car.year}</div>
+        <span class="car-icon">${icon}</span>
+        <div style="font-size:10px; color:#003333; text-align:center; margin-bottom:4px">${car.model}</div>
+        ${fields.join('')}
+        <div class="card-avail">${avail}</div>
+      </div>`;
+  }).join('');
+
+  area.innerHTML = header + `<div class="results-grid">${cards}</div>`;
+}
+
+// ============================================================
+// CARGA FALSA CON BARRA QUE SE TRABA EN 97%
+// ============================================================
+const LOAD_MSGS = [
+  'Conectando con base de datos remota...',
+  'Verificando licencia del sistema...',
+  'Descargando precios actualizados...',
+  'Aplicando algoritmo de búsqueda con IA™...',
+  'Validando certificados SSL...',
+  'Consultando stock en tiempo real...',
+  'Procesando sus preferencias...',
+  'Sincronizando con servidor principal...',
+  'Comprimiendo datos para envío...',
+  'Casi listo, por favor espere...',
+  'Decomprimiendo respuesta del servidor...',
+  'Aplicando filtros personalizados...',
+];
+
+function showLoadingThen(callback) {
+  const modal  = document.getElementById('loading-modal');
+  const msgEl  = document.getElementById('loading-msg');
+  const bar    = document.getElementById('progress-bar');
+  const pct    = document.getElementById('progress-pct');
+
+  modal.style.display = 'flex';
+  let progress = 0;
+  let msgIdx   = 0;
+
+  const tick = setInterval(() => {
+    // Avanza rápido al principio, se frena cerca del 97%
+    if      (progress < 70) progress += Math.random() * 14;
+    else if (progress < 90) progress += Math.random() * 2;
+    else if (progress < 97) progress += Math.random() * 0.3;
+    else                    progress  = 97; // se traba
+
+    const p = Math.min(97, progress);
+    bar.style.width = p + '%';
+    pct.textContent = Math.floor(p) + '%';
+
+    msgIdx = (msgIdx + 1) % LOAD_MSGS.length;
+    msgEl.textContent = LOAD_MSGS[msgIdx];
+
+    if (progress >= 97) {
+      clearInterval(tick);
+      // Se queda en 97% por 2.4 segundos antes de terminar
+      setTimeout(() => {
+        bar.style.width = '100%';
+        pct.textContent = '100%';
+        setTimeout(() => {
+          modal.style.display = 'none';
+          callback();
+          // Alert innecesario luego de mostrar los resultados
+          setTimeout(() => {
+            alert(
+              '✅ Búsqueda finalizada exitosamente\n\n' +
+              'Se procesaron 18.432 registros internos.\n' +
+              'Tiempo de respuesta del servidor: 4,7 segundos.\n' +
+              'ID de transacción: TRX-' + Math.floor(Math.random() * 99999) + '\n\n' +
+              'Presione OK para visualizar los resultados.'
+            );
+          }, 80);
+        }, 400);
+      }, 2400);
+    }
+  }, 180);
+}
+
+// ============================================================
+// INICIALIZACIÓN
+// ============================================================
+buildSlot();
+startSessionTimer();
+</script>
+</body>
+</html>
