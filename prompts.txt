@@ -1,0 +1,48 @@
+Input:
+Eres un experto en diseño ux, tu tarea es la diseñar un buscador de autos siguiendo estas pautas: 1)debe ser un ejemplo de mala experiencia de usuario. 2)debe ser funcional, usando datos mockeados. 3)la salida debe ser un solo html usable, vanilla js y sin dependencias. a la hora de decidir el criterio de lo que es una mala experiencia de usuario basate en estos ejemplos. - Si un buen diseño usa un select para almacenar marcas, un mal diseño usaria por ejemplo un boton que de manera aleatoria seleccione una marca, o un slider de seleccion. - Un buen diseño usaria colores complementarios para su facil lectura, un mal diseño todo lo contrario.
+
+Output:
+Acá está. Cada decisión de diseño fue tomada para maximizar la fricción. El catálogo completo de horrores implementados:
+Controles anti-intuitivos
+
+Marca: ruleta giratoria — hay que spinnear y parar en la marca deseada. Si te pasás, volvé a girar
+Año mínimo: slider visualmente invertido (CSS scaleX(-1)), con las etiquetas al revés (1990 = NUEVO, 2024 = VIEJO)
+Precio máximo: stepper de $1.000 en $1.000 para llegar hasta $500.000 — eso son 500 clicks
+Kilometraje: stepper de 1 km por toque. Para llegar a 100.000 km son 100.000 clicks. Con nota que dice "mantén presionado para ir más rápido (no funciona)"
+
+Esquema de colores
+
+Fondo violeta con pattern diagonal, texto rojo, labels amarillo sobre naranja, bordes verde neón, botones fucsia
+
+Comportamiento destructivo
+
+Título parpadeante cada 1.2s
+Temporizador de sesión de 60 segundos que resetea todos los filtros y muestra un alert()
+Barra de carga falsa que se traba en 97% durante 2.4 segundos
+alert() innecesario con "ID de transacción" al terminar de cargar
+
+Resultados inútiles
+
+Precio en 4px con el mismo color que el fondo (invisible)
+Estado "disponible/no disponible" en 3px, texto mismo color que fondo → completamente invisible
+Año en writing-mode: vertical-rl
+Campos en orden aleatorio cada render
+Cards ligeramente rotadas
+Icono de auto también aleatorio (no representa el modelo)
+
+Checkbox mentiroso
+
+Etiqueta: "INCLUIR AUTOS NO DISPONIBLES (recomendado ✔)"
+Nota: "Marcar esta opción oculta los no disponibles" — contradice el label
+Lógica real: marcado = solo muestra disponibles (opuesto a lo que dice)
+
+Botón de búsqueda
+
+Se escapa 220px al hacer hover con rotación de 18°
+
+input:
+es normal que la marca no se vea? es una decision de diseño?
+
+output:
+No, es un bug real — la lógica del translateY sobre el flex column no está posicionando bien el ítem inicial. Lo arreglo ahora con un approach más simple y robusto (igual de feo y molesto):Edited 3 files, viewed a file, read a fileEdited 3 files, viewed a file, read a fileArreglado. El bug era que el approach original (translateY sobre un flex column generado dinámicamente) no posicionaba bien el ítem inicial porque el layout aún no tenía dimensiones al momento de ejecutar el transform.
+Lo reemplacé por lo más simple posible: un solo <div> cuyo textContent se swapea en cada tick del setInterval. Mismo efecto de ruleta, cero problemas de layout. La marca ahora se ve claramente en amarillo sobre el fondo azul oscuro, y al parar muestra un ✅ para confirmar la selección.
